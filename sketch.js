@@ -13,9 +13,9 @@ function setup() {
 
   drawingSurface = createGraphics(width, height);
 
-  //drawingSurface.background(50);
+  // drawingSurface.background(50);
   drawingSurface.stroke(255);
-  drawingSurface.strokeWeight(1);
+  drawingSurface.strokeWeight();
 }
 
 function draw() {
