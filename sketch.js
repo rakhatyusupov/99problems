@@ -2,11 +2,13 @@ let glitchShader;
 let grainShader;
 let drawingSurface;
 let userInputField;
-let userInput = "ВАЛИДОЛ TYPE BEAT";
+let userInput = "Hello";
+let img;
 
 function preload() {
   glitchShader = loadShader("filter.vert", "glitch.frag");
   grainShader = loadShader("filter.vert", "grain.frag");
+  img = loadImage("./blue-clouds-day-fluffy-53594 (1).jpeg");
 }
 
 function setup() {
@@ -16,9 +18,8 @@ function setup() {
   drawingSurface.stroke(255);
   drawingSurface.strokeWeight(2);
 
-  // Создаём поле ввода
   userInputField = createInput("Hello");
-  userInputField.position(10, height + 10); // Под холстом
+  userInputField.position(10, height + 10);
   userInputField.input(() => {
     userInput = userInputField.value();
   });
@@ -27,30 +28,28 @@ function setup() {
 }
 
 function draw() {
-  // Изменяем толщину линии по синусоиде во времени (от 0 до 5)
   let dynamicWeight = sin(millis() * 0.002) * 2.5 + 2.5;
   drawingSurface.strokeWeight(dynamicWeight);
 
-  // Рисуем линии мышкой
   if (mouseIsPressed) {
     drawingSurface.line(mouseX, mouseY, pmouseX, pmouseY);
   }
 
-  // Выводим нарисованное
   image(drawingSurface, 0, 0);
 
-  // Отображаем текст, следующий за мышкой
+  // Draw image at mouse position
+  image(img, mouseX, mouseY, 400, 400);
+
+  // Draw text at mouse position
   fill(255);
   noStroke();
-  textSize(64);
-  text(userInput, mouseX, mouseY);
+  textSize(24);
+  text(userInput, mouseX + 110, mouseY + 24);
 
-  // Применяем шейдер зерна
   grainShader.setUniform("millis", millis());
   grainShader.setUniform("grainAmp", 0.1);
   filterShader(grainShader);
 
-  // Применяем глитч-шейдер
   glitchShader.setUniform("noise", getNoiseValue());
   filterShader(glitchShader);
 }
