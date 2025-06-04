@@ -18,13 +18,30 @@ function setup() {
   drawingSurface.stroke(255);
   drawingSurface.strokeWeight(2);
 
+  textFont("monospace");
+
+  // --- Controls ---
+  const toggleButton = createButton("⚙️");
+  toggleButton.position(width - 50, 10);
+  toggleButton.style("z-index", "1000");
+  toggleButton.mousePressed(toggleOverlay);
+
+  const overlay = createDiv("");
+  overlay.id("settingsOverlay");
+
+  createP("Настройки здесь").parent(overlay);
+
   userInputField = createInput("Hello");
-  userInputField.position(10, height + 10);
+  userInputField.parent(overlay);
   userInputField.input(() => {
     userInput = userInputField.value();
   });
 
-  textFont("monospace");
+  function toggleOverlay() {
+    const el = select("#settingsOverlay");
+    const visible = el.style("display") === "block";
+    el.style("display", visible ? "none" : "block");
+  }
 }
 
 function draw() {
@@ -43,8 +60,8 @@ function draw() {
   // Draw text at mouse position
   fill(255);
   noStroke();
-  textSize(24);
-  text(userInput, mouseX + 110, mouseY + 24);
+  textSize(240);
+  text(userInput, mouseX, mouseY + 24);
 
   grainShader.setUniform("millis", millis());
   grainShader.setUniform("grainAmp", 0.1);
