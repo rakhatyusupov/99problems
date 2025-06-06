@@ -7,7 +7,7 @@ varying vec2 pos;
 uniform sampler2D filter_background; // текстура после grain-frag
 uniform vec2 filter_res;             // разрешение (не используется ниже, но может понадобиться)
 uniform float noise;                 // из sketch.js: getNoiseValue()
-uniform float millis;                // если нужно, можем использовать в эффектах
+uniform float millis;                //  использоваесли нужно, можемть в эффектах
 
 #define SIN01(a) (sin(a) * 0.5 + 0.5)
 
@@ -33,7 +33,7 @@ void main() {
     float angle = hsv.x + atan(uv.y - 0.5, uv.x - 0.5) + millis * 0.0001;
     mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
 
-    float offsetAmount = log(max(SIN01(millis * 0.0007) - 0.2, 0.0) * 0.2 + 1.0);
+    float offsetAmount = log(max(SIN01(millis * 0.0007) - 0.2, 0.0) * 0.20 + 1.0);
     vec2 offset = rot * vec2(offsetAmount, 0.0) * hsv.y;
 
     vec3 col = texture2D(filter_background, uv + offset).rgb;

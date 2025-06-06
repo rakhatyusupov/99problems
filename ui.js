@@ -1,7 +1,3 @@
-// ui.js
-
-// 1) Создаём глобальный объект, в который будем складывать состояния UI.
-//    (window.AppState: params + helper функции)
 window.AppState = {
   params: {
     userText: "Hello", // текст для отображения в p5
@@ -10,7 +6,6 @@ window.AppState = {
     imageSize: 100, // размер картинки в пикселях
     fontSize: 24, // размер текста
   },
-  // метод для обновления одного параметра
   setParam(key, value) {
     this.params[key] = value;
   },

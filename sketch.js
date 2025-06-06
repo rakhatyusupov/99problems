@@ -1,18 +1,14 @@
-// sketch.js
-
 let glitchShader;
 let grainShader;
 let drawingSurface;
 let img;
 
 function preload() {
-  // Шейдеры
   glitchShader = loadShader("filter.vert", "glitch.frag");
   grainShader = loadShader("filter.vert", "grain.frag");
 
-  // Любая картинка (можно заменить своим именем)
   img = loadImage(
-    "image-2.jpg",
+    "P20191_10.jpg",
     () => {},
     () => {
       // Если не удалось загрузить, просто сделаем img = null
@@ -31,8 +27,6 @@ function setup() {
 }
 
 function draw() {
-  background(0);
-
   // 1) получаем параметры из global AppState
   const { userText, grainAmp, showImage, imageSize, fontSize } =
     window.AppState.params;
