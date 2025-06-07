@@ -1,6 +1,6 @@
 window.AppState = {
   params: {
-    userText: "Hello",
+    userText: "Hello\nworld",
     grainAmp: 0.1,
     showImage: true,
     imageSize: 100,
@@ -16,50 +16,89 @@ window.AppState = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.createElement("button");
-  btn.id = "toggleButton";
-  btn.innerText = "⚙️";
-  document.body.appendChild(btn);
-
-  const overlay = document.createElement("div");
-  overlay.id = "settingsOverlay";
-  const addInput = (labelTxt, key, type, attrs = {}) => {
-    const label = document.createElement("label");
-    label.innerText = labelTxt;
-    const input = document.createElement("input");
-    input.type = type;
-    Object.assign(input, attrs);
-    input.value = window.AppState.params[key];
-    input.addEventListener("input", (e) =>
-      window.AppState.setParam(
-        key,
-        type === "checkbox"
-          ? e.target.checked
-          : type === "number" || type === "range"
-          ? +e.target.value
-          : e.target.value
-      )
-    );
-    label.appendChild(input);
-    overlay.appendChild(label);
-  };
-
+  const overlay = Object.assign(document.createElement("div"), {
+    id: "settingsOverlay",
+  });
   overlay.appendChild(
     Object.assign(document.createElement("h2"), { innerText: "Настройки" })
   );
-  addInput("Text:", "userText", "text");
-  addInput("Grain amp:", "grainAmp", "range", { min: 0, max: 1, step: 0.01 });
-  addInput("Image size:", "imageSize", "number", { min: 10, max: 500 });
-  addInput("Font size:", "fontSize", "range", { min: 12, max: 200 });
-  addInput("Rows:", "rows", "number", { min: 1, max: 50 });
-  addInput("Cols:", "cols", "number", { min: 1, max: 50 });
-  addInput("Margin:", "margin", "number", { min: 0, max: 500 });
-  addInput("Gap:", "gap", "number", { min: 0, max: 200 });
-  addInput("Show image", "showImage", "checkbox");
+
+  const addNum = (lbl, key, min, max) => {
+    const l = document.createElement("label");
+    l.innerText = lbl;
+    const i = Object.assign(document.createElement("input"), {
+      type: "number",
+      min,
+      max,
+      value: window.AppState.params[key],
+    });
+    i.oninput = (e) => window.AppState.setParam(key, +e.target.value);
+    l.appendChild(i);
+    overlay.appendChild(l);
+  };
+
+  const addRange = (lbl, key, min, max, step) => {
+    const l = document.createElement("label");
+    l.innerText = lbl;
+    const i = Object.assign(document.createElement("input"), {
+      type: "range",
+      min,
+      max,
+      step,
+      value: window.AppState.params[key],
+    });
+    i.oninput = (e) => window.AppState.setParam(key, +e.target.value);
+    l.appendChild(i);
+    overlay.appendChild(l);
+  };
+
+  // textarea вместо input
+  const ltxt = document.createElement("label");
+  ltxt.innerText = "Text:";
+  const ta = document.createElement("textarea");
+  ta.value = window.AppState.params.userText;
+  ta.oninput = (e) => window.AppState.setParam("userText", e.target.value);
+  ltxt.appendChild(ta);
+  overlay.appendChild(ltxt);
+
+  addRange("Grain amp:", "grainAmp", 0, 1, 0.01);
+  addNum("Image size:", "imageSize", 10, 500);
+  addRange("Font size:", "fontSize", 12, 200, 1);
+  addNum("Rows:", "rows", 1, 50);
+  addNum("Cols:", "cols", 1, 50);
+  addNum("Margin:", "margin", 0, 500);
+  addNum("Gap:", "gap", 0, 200);
+
+  // чекбокс show image
+  const cbl = document.createElement("label");
+  const cb = Object.assign(document.createElement("input"), {
+    type: "checkbox",
+    checked: window.AppState.params.showImage,
+  });
+  cb.onchange = (e) => window.AppState.setParam("showImage", e.target.checked);
+  cbl.append(cb, " Show image");
+  overlay.appendChild(cbl);
+
+  // кнопки fps / loop
+  const fps20 = document.createElement("button");
+  fps20.innerText = "FPS 20";
+  fps20.onclick = () => window.setFPS(20);
+  const fps1 = document.createElement("button");
+  fps1.innerText = "FPS 1";
+  fps1.onclick = () => window.setFPS(1);
+  const loopBtn = document.createElement("button");
+  loopBtn.innerText = "Pause / Resume";
+  loopBtn.onclick = () => window.toggleLoop();
+  overlay.append(fps20, fps1, loopBtn);
 
   document.body.appendChild(overlay);
-  btn.addEventListener("click", () => {
-    overlay.style.display =
-      overlay.style.display === "block" ? "none" : "block";
+
+  const btn = Object.assign(document.createElement("button"), {
+    id: "toggleButton",
+    innerText: "⚙️",
   });
+  btn.onclick = () =>
+    (overlay.style.display =
+      overlay.style.display === "block" ? "none" : "block");
+  document.body.appendChild(btn);
 });

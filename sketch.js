@@ -1,93 +1,79 @@
 let glitchShader, grainShader;
 let drawingSurface, img;
 
-/* ─────────────  GRID  ───────────── */
-function createGrid({ rows, cols, margin, gap, canvasW, canvasH }) {
-  const colSize = (canvasW - 2 * margin - gap * (cols - 1)) / cols;
-  const rowSize = (canvasH - 2 * margin - gap * (rows - 1)) / rows;
-
-  // случайный сдвиг прямоугольника
-  const kx = floor(random(cols));
-  const ky = floor(random(rows));
-
-  const x0 = margin + kx * (colSize + gap);
-  const y0 = margin + ky * (rowSize + gap);
-
+/*────── GRID ──────*/
+function createGrid({ rows, cols, margin, gap, w, h }) {
+  const col = (w - 2 * margin - gap * (cols - 1)) / cols;
+  const row = (h - 2 * margin - gap * (rows - 1)) / rows;
+  const cx = floor(random(cols));
+  const cy = floor(random(rows));
+  const x0 = margin + cx * (col + gap);
+  const y0 = margin + cy * (row + gap);
   return [
     [x0, y0],
-    [x0 + colSize, y0],
-    [x0, y0 + rowSize],
-    [x0 + colSize, y0 + rowSize],
+    [x0 + col, y0],
+    [x0, y0 + row],
+    [x0 + col, y0 + row],
   ];
 }
-/* ─────────────────────────────────── */
+/*──────────────────*/
+
+let textPos,
+  imgPos,
+  drag = null,
+  offX = 0,
+  offY = 0,
+  isLooping = true;
 
 function preload() {
   glitchShader = loadShader("filter.vert", "glitch.frag");
   grainShader = loadShader("filter.vert", "grain.frag");
-
   img = loadImage(
-    "blue-clouds-day-fluffy-53594 (1).jpeg",
+    "P20191_10.jpg",
     () => {},
-    () => {
-      img = null;
-    }
+    () => (img = null)
   );
 }
 
 function setup() {
   createCanvas(800, 800);
   drawingSurface = createGraphics(width, height);
-  drawingSurface.stroke(255);
-  drawingSurface.strokeWeight(2);
-  textFont("Arial");
-  frameRate(1);
-  drawingSurface.background(32);
+  drawingSurface.stroke(255).strokeWeight(2);
+  textFont("monospace");
+
+  // начальное размещение на сетке
+  const p = window.AppState.params;
+  const c = createGrid({ ...p, w: width, h: height });
+  textPos = createVector(...random(c));
+  imgPos = createVector(...random(c));
+
+  /* публичные управлялки для UI */
+  window.setFPS = (f) => (loop(), frameRate(f));
+  window.toggleLoop = () => (
+    isLooping ? noLoop() : loop(), (isLooping = !isLooping)
+  );
 }
 
 function draw() {
-  const {
-    userText,
-    grainAmp,
-    showImage,
-    imageSize,
-    fontSize,
-    rows,
-    cols,
-    margin,
-    gap,
-  } = window.AppState.params;
+  const { userText, grainAmp, showImage, imageSize, fontSize } =
+    window.AppState.params;
 
-  /* grid-based random placement */
-  const pts = createGrid({
-    rows,
-    cols,
-    margin,
-    gap,
-    canvasW: width,
-    canvasH: height,
-  });
-
-  const rndCorner = random(pts);
-  const [tX, tY] = rndCorner;
-  const alignLeft = rndCorner === pts[0] || rndCorner === pts[2];
-  textAlign(alignLeft ? LEFT : RIGHT, TOP);
-
-  /* p5 drawing surface */
-  let w = sin(millis() * 0.002) * 2.5 + 2.5;
-  drawingSurface.strokeWeight(w);
-
+  // динамическая ручная поверхность
+  drawingSurface.strokeWeight(sin(millis() * 0.002) * 2.5 + 2.5);
   if (mouseIsPressed) drawingSurface.line(mouseX, mouseY, pmouseX, pmouseY);
   image(drawingSurface, 0, 0);
 
-  if (showImage && img) image(img, tX, tY, imageSize, imageSize);
+  // изображение
+  if (showImage && img) image(img, imgPos.x, imgPos.y, imageSize, imageSize);
 
+  // текст
   fill(255);
   noStroke();
   textSize(fontSize);
-  text(userText, tX, tY);
+  textAlign(LEFT, TOP);
+  text(userText, textPos.x, textPos.y);
 
-  /* shaders */
+  // шейдеры
   grainShader.setUniform("millis", millis());
   grainShader.setUniform("grainAmp", grainAmp);
   filterShader(grainShader);
@@ -95,4 +81,49 @@ function draw() {
   glitchShader.setUniform("noise", noise(millis() / 100));
   glitchShader.setUniform("millis", millis());
   filterShader(glitchShader);
+}
+
+/* ───── Dragging ───── */
+function mousePressed() {
+  const p = window.AppState.params;
+  // картинка?
+  if (
+    window.AppState.params.showImage &&
+    img &&
+    mouseX > imgPos.x &&
+    mouseX < imgPos.x + p.imageSize &&
+    mouseY > imgPos.y &&
+    mouseY < imgPos.y + p.imageSize
+  ) {
+    drag = "img";
+    offX = mouseX - imgPos.x;
+    offY = mouseY - imgPos.y;
+    return;
+  }
+  // текст?
+  const tw = textWidth(p.userText),
+    th = p.fontSize;
+  if (
+    mouseX > textPos.x &&
+    mouseX < textPos.x + tw &&
+    mouseY > textPos.y &&
+    mouseY < textPos.y + th
+  ) {
+    drag = "txt";
+    offX = mouseX - textPos.x;
+    offY = mouseY - textPos.y;
+  }
+}
+
+function mouseDragged() {
+  if (!drag) return;
+  if (drag === "img") {
+    imgPos.set(mouseX - offX, mouseY - offY);
+    return;
+  }
+  textPos.set(mouseX - offX, mouseY - offY);
+}
+
+function mouseReleased() {
+  drag = null;
 }
