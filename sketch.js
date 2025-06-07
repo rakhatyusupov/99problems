@@ -1,17 +1,35 @@
-let glitchShader;
-let grainShader;
-let drawingSurface;
-let img;
+let glitchShader, grainShader;
+let drawingSurface, img;
+
+/* ─────────────  GRID  ───────────── */
+function createGrid({ rows, cols, margin, gap, canvasW, canvasH }) {
+  const colSize = (canvasW - 2 * margin - gap * (cols - 1)) / cols;
+  const rowSize = (canvasH - 2 * margin - gap * (rows - 1)) / rows;
+
+  // случайный сдвиг прямоугольника
+  const kx = floor(random(cols));
+  const ky = floor(random(rows));
+
+  const x0 = margin + kx * (colSize + gap);
+  const y0 = margin + ky * (rowSize + gap);
+
+  return [
+    [x0, y0],
+    [x0 + colSize, y0],
+    [x0, y0 + rowSize],
+    [x0 + colSize, y0 + rowSize],
+  ];
+}
+/* ─────────────────────────────────── */
 
 function preload() {
   glitchShader = loadShader("filter.vert", "glitch.frag");
   grainShader = loadShader("filter.vert", "grain.frag");
 
   img = loadImage(
-    "P20191_10.jpg",
+    "blue-clouds-day-fluffy-53594 (1).jpeg",
     () => {},
     () => {
-      // Если не удалось загрузить, просто сделаем img = null
       img = null;
     }
   );
@@ -22,54 +40,59 @@ function setup() {
   drawingSurface = createGraphics(width, height);
   drawingSurface.stroke(255);
   drawingSurface.strokeWeight(2);
-
-  textFont("monospace");
+  textFont("Arial");
+  frameRate(1);
+  drawingSurface.background(32);
 }
 
 function draw() {
-  // 1) получаем параметры из global AppState
-  const { userText, grainAmp, showImage, imageSize, fontSize } =
-    window.AppState.params;
+  const {
+    userText,
+    grainAmp,
+    showImage,
+    imageSize,
+    fontSize,
+    rows,
+    cols,
+    margin,
+    gap,
+  } = window.AppState.params;
 
-  // 2) Динамическая толщина линии (как было раньше)
-  let dynamicWeight = sin(millis() * 0.002) * 2.5 + 2.5;
-  drawingSurface.strokeWeight(dynamicWeight);
+  /* grid-based random placement */
+  const pts = createGrid({
+    rows,
+    cols,
+    margin,
+    gap,
+    canvasW: width,
+    canvasH: height,
+  });
 
-  // 3) Рисуем на drawingSurface, если зажата мышка
-  if (mouseIsPressed) {
-    drawingSurface.line(mouseX, mouseY, pmouseX, pmouseY);
-  }
+  const rndCorner = random(pts);
+  const [tX, tY] = rndCorner;
+  const alignLeft = rndCorner === pts[0] || rndCorner === pts[2];
+  textAlign(alignLeft ? LEFT : RIGHT, TOP);
 
-  // 4) Показываем нарисованное
+  /* p5 drawing surface */
+  let w = sin(millis() * 0.002) * 2.5 + 2.5;
+  drawingSurface.strokeWeight(w);
+
+  if (mouseIsPressed) drawingSurface.line(mouseX, mouseY, pmouseX, pmouseY);
   image(drawingSurface, 0, 0);
 
-  // 5) Если включено showImage и картинка загрузилась, рисуем её
-  if (showImage && img) {
-    image(img, mouseX, mouseY, imageSize, imageSize);
-  }
+  if (showImage && img) image(img, tX, tY, imageSize, imageSize);
 
-  // 6) Рисуем текст (из UI) рядом с мышкой
   fill(255);
   noStroke();
   textSize(fontSize);
-  text(userText, mouseX + imageSize + 20, mouseY + fontSize / 2);
+  text(userText, tX, tY);
 
-  // 7) Передаём параметры в шейдеры:
-
-  // Grain-шейдер (передаём время и величину grainAmp)
+  /* shaders */
   grainShader.setUniform("millis", millis());
   grainShader.setUniform("grainAmp", grainAmp);
   filterShader(grainShader);
 
-  // Glitch-шейдер (передаём только noise; millis можно захардкодить, если нужно)
-  glitchShader.setUniform("noise", getNoiseValue());
+  glitchShader.setUniform("noise", noise(millis() / 100));
   glitchShader.setUniform("millis", millis());
   filterShader(glitchShader);
-}
-
-function getNoiseValue() {
-  let v = noise(millis() / 100);
-  const cutOff = 0.4;
-  if (v < cutOff) return 0;
-  return pow((v - cutOff) / (1 - cutOff), 2);
 }
