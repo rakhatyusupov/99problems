@@ -1,29 +1,28 @@
-// functions/grid.js
-// Пусто – логика грида в sketch.js
-
 // sketch.js
 let glitchShader, grainShader;
 let drawingSurface, img;
-let textPos,
-  imgPos,
-  drag = null,
+let textPos, imgPos;
+// drag modes: 'img', 'txt'
+let drag = null,
   offX = 0,
-  offY = 0,
-  isLooping = true;
+  offY = 0;
+// dropped images drag info
+let dragInfo = null;
 let droppedImages = [];
+let isLooping = true;
 
 function createGrid({ rows, cols, margin, gap, w, h }) {
-  const col = (w - 2 * margin - gap * (cols - 1)) / cols;
-  const row = (h - 2 * margin - gap * (rows - 1)) / rows;
+  const colSize = (w - 2 * margin - gap * (cols - 1)) / cols;
+  const rowSize = (h - 2 * margin - gap * (rows - 1)) / rows;
   const cx = floor(random(cols));
   const cy = floor(random(rows));
-  const x0 = margin + cx * (col + gap);
-  const y0 = margin + cy * (row + gap);
+  const x0 = margin + cx * (colSize + gap);
+  const y0 = margin + cy * (rowSize + gap);
   return [
     [x0, y0],
-    [x0 + col, y0],
-    [x0, y0 + row],
-    [x0 + col, y0 + row],
+    [x0 + colSize, y0],
+    [x0, y0 + rowSize],
+    [x0 + colSize, y0 + rowSize],
   ];
 }
 
@@ -41,14 +40,17 @@ function setup() {
   const cnv = createCanvas(800, 800);
   cnv.drop(handleFile);
   drawingSurface = createGraphics(width, height);
-  drawingSurface.stroke(255).strokeWeight(2);
   textFont("monospace");
   resetGridAnchors();
 
-  window.setFPS = (f) => (loop(), frameRate(f));
-  window.toggleLoop = () => (
-    isLooping ? noLoop() : loop(), (isLooping = !isLooping)
-  );
+  window.setFPS = (f) => {
+    loop();
+    frameRate(f);
+  };
+  window.toggleLoop = () => {
+    isLooping ? noLoop() : loop();
+    isLooping = !isLooping;
+  };
   window.resetAnchors = resetGridAnchors;
 }
 
@@ -67,65 +69,94 @@ function handleFile(file) {
 
 function resetGridAnchors() {
   const p = window.AppState.params;
-  const c = createGrid({ ...p, w: width, h: height });
-  textPos = createVector(...random(c));
-  imgPos = createVector(...random(c));
+  const corners = createGrid({
+    rows: p.rows,
+    cols: p.cols,
+    margin: p.margin,
+    gap: p.gap,
+    w: width,
+    h: height,
+  });
+  textPos = createVector(...random(corners));
+  imgPos = createVector(...random(corners));
 }
 
 function draw() {
-  const { userText, grainAmp, showImage, imageSize, fontSize } =
-    window.AppState.params;
-
+  const p = window.AppState.params;
   image(drawingSurface, 0, 0);
 
-  if (showImage && img) {
-    image(
-      img,
-      imgPos.x,
-      imgPos.y,
-      imageSize * (img.width / img.height),
-      imageSize
-    );
+  // initial image
+  if (p.showImage && img) {
+    const h0 = p.imageSize;
+    const w0 = h0 * (img.width / img.height);
+    image(img, imgPos.x, imgPos.y, w0, h0);
   }
 
+  // dropped images
   droppedImages.forEach((o) => {
-    const h = imageSize;
-    const w = h * o.aspect;
-    image(o.img, o.x, o.y, w, h);
+    const h0 = p.imageSize;
+    const w0 = h0 * o.aspect;
+    image(o.img, o.x, o.y, w0, h0);
   });
 
+  // text
   fill(255);
   noStroke();
-  textSize(fontSize);
+  textSize(p.fontSize);
   textAlign(LEFT, TOP);
-  text(userText, textPos.x, textPos.y);
+  text(p.userText, textPos.x, textPos.y);
 
+  // shaders
   grainShader.setUniform("millis", millis());
-  grainShader.setUniform("grainAmp", grainAmp);
+  grainShader.setUniform("grainAmp", p.grainAmp);
   filterShader(grainShader);
 
-  glitchShader.setUniform("noise", noise(millis() / 100));
+  glitchShader.setUniform("noise", millis() / 100);
   glitchShader.setUniform("millis", millis());
   filterShader(glitchShader);
 }
 
 function mousePressed() {
   const p = window.AppState.params;
-  if (
-    p.showImage &&
-    img &&
-    mouseX > imgPos.x &&
-    mouseX < imgPos.x + p.imageSize * (img.width / img.height) &&
-    mouseY > imgPos.y &&
-    mouseY < imgPos.y + p.imageSize
-  ) {
-    drag = "img";
-    offX = mouseX - imgPos.x;
-    offY = mouseY - imgPos.y;
-    return;
+
+  // drag initial image
+  if (p.showImage && img) {
+    const h0 = p.imageSize;
+    const w0 = h0 * (img.width / img.height);
+    if (
+      mouseX > imgPos.x &&
+      mouseX < imgPos.x + w0 &&
+      mouseY > imgPos.y &&
+      mouseY < imgPos.y + h0
+    ) {
+      drag = "img";
+      offX = mouseX - imgPos.x;
+      offY = mouseY - imgPos.y;
+      return;
+    }
   }
-  const tw = textWidth(p.userText),
-    th = p.fontSize;
+
+  // drag dropped images
+  for (let i = droppedImages.length - 1; i >= 0; i--) {
+    const o = droppedImages[i];
+    const h0 = p.imageSize;
+    const w0 = h0 * o.aspect;
+    if (
+      mouseX > o.x &&
+      mouseX < o.x + w0 &&
+      mouseY > o.y &&
+      mouseY < o.y + h0
+    ) {
+      dragInfo = { idx: i };
+      offX = mouseX - o.x;
+      offY = mouseY - o.y;
+      return;
+    }
+  }
+
+  // drag text
+  const tw = textWidth(p.userText);
+  const th = p.fontSize;
   if (
     mouseX > textPos.x &&
     mouseX < textPos.x + tw &&
@@ -139,127 +170,36 @@ function mousePressed() {
 }
 
 function mouseDragged() {
-  if (!drag) return;
-  const { cols, rows, margin, gap } = window.AppState.params;
-  const colSize = (width - 2 * margin - gap * (cols - 1)) / cols;
-  const rowSize = (height - 2 * margin - gap * (rows - 1)) / rows;
-  let nx = mouseX - offX;
-  let ny = mouseY - offY;
-  nx = margin + round((nx - margin) / (colSize + gap)) * (colSize + gap);
-  ny = margin + round((ny - margin) / (rowSize + gap)) * (rowSize + gap);
-  if (drag === "img") imgPos.set(nx, ny);
-  else textPos.set(nx, ny);
+  const p = window.AppState.params;
+  const colSize = (width - 2 * p.margin - p.gap * (p.cols - 1)) / p.cols;
+  const rowSize = (height - 2 * p.margin - p.gap * (p.rows - 1)) / p.rows;
+
+  // snap-drag initial or text
+  if (drag) {
+    let nx = mouseX - offX;
+    let ny = mouseY - offY;
+    nx =
+      p.margin + round((nx - p.margin) / (colSize + p.gap)) * (colSize + p.gap);
+    ny =
+      p.margin + round((ny - p.margin) / (rowSize + p.gap)) * (rowSize + p.gap);
+    if (drag === "img") imgPos.set(nx, ny);
+    else textPos.set(nx, ny);
+  }
+  // snap-drag dropped
+  else if (dragInfo) {
+    const o = droppedImages[dragInfo.idx];
+    let nx = mouseX - offX;
+    let ny = mouseY - offY;
+    nx =
+      p.margin + round((nx - p.margin) / (colSize + p.gap)) * (colSize + p.gap);
+    ny =
+      p.margin + round((ny - p.margin) / (rowSize + p.gap)) * (rowSize + p.gap);
+    o.x = nx;
+    o.y = ny;
+  }
 }
 
 function mouseReleased() {
   drag = null;
+  dragInfo = null;
 }
-
-// ui.js
-window.AppState = {
-  params: {
-    userText: "Hello\nworld",
-    grainAmp: 0.1,
-    showImage: true,
-    imageSize: 100,
-    fontSize: 24,
-    rows: 4,
-    cols: 4,
-    margin: 20,
-    gap: 10,
-  },
-  setParam(k, v) {
-    this.params[k] = v;
-  },
-};
-
-document.addEventListener("DOMContentLoaded", () => {
-  const overlay = document.createElement("div");
-  overlay.id = "settingsOverlay";
-  overlay.appendChild(
-    Object.assign(document.createElement("h2"), { innerText: "Настройки" })
-  );
-
-  const addNum = (lbl, key, min, max) => {
-    const l = document.createElement("label");
-    l.innerText = lbl;
-    const i = Object.assign(document.createElement("input"), {
-      type: "number",
-      min,
-      max,
-      value: window.AppState.params[key],
-    });
-    i.oninput = (e) => window.AppState.setParam(key, +e.target.value);
-    l.appendChild(i);
-    overlay.appendChild(l);
-  };
-
-  const addRange = (lbl, key, min, max, step) => {
-    const l = document.createElement("label");
-    l.innerText = lbl;
-    const i = Object.assign(document.createElement("input"), {
-      type: "range",
-      min,
-      max,
-      step,
-      value: window.AppState.params[key],
-    });
-    i.oninput = (e) => window.AppState.setParam(key, +e.target.value);
-    l.appendChild(i);
-    overlay.appendChild(l);
-  };
-
-  const ltxt = document.createElement("label");
-  ltxt.innerText = "Text:";
-  const ta = document.createElement("textarea");
-  ta.rows = 4;
-  ta.value = window.AppState.params.userText;
-  ta.oninput = (e) => window.AppState.setParam("userText", e.target.value);
-  ltxt.appendChild(ta);
-  overlay.appendChild(ltxt);
-
-  addRange("Grain amp:", "grainAmp", 0, 1, 0.01);
-  addNum("Image size:", "imageSize", 10, 500);
-  addRange("Font size:", "fontSize", 12, 200, 1);
-  addNum("Rows:", "rows", 1, 50);
-  addNum("Cols:", "cols", 1, 50);
-  addNum("Margin:", "margin", 0, 500);
-  addNum("Gap:", "gap", 0, 200);
-
-  const cbl = document.createElement("label");
-  const cb = Object.assign(document.createElement("input"), {
-    type: "checkbox",
-    checked: window.AppState.params.showImage,
-  });
-  cb.onchange = (e) => window.AppState.setParam("showImage", e.target.checked);
-  cbl.append(cb, " Show image");
-  overlay.appendChild(cbl);
-
-  const fps20 = document.createElement("button");
-  fps20.innerText = "FPS 20";
-  fps20.onclick = () => window.setFPS(20);
-  const fps1 = document.createElement("button");
-  fps1.innerText = "FPS 1";
-  fps1.onclick = () => window.setFPS(1);
-  const loopBtn = document.createElement("button");
-  loopBtn.innerText = "Pause / Resume";
-  loopBtn.onclick = () => window.toggleLoop();
-  const resetBtn = document.createElement("button");
-  resetBtn.innerText = "Reset grid pos";
-  resetBtn.onclick = () => {
-    if (!isLooping) window.resetAnchors();
-  };
-
-  overlay.append(fps20, fps1, loopBtn, resetBtn);
-
-  document.body.appendChild(overlay);
-
-  const btn = Object.assign(document.createElement("button"), {
-    id: "toggleButton",
-    innerText: "⚙️",
-  });
-  btn.onclick = () =>
-    (overlay.style.display =
-      overlay.style.display === "block" ? "none" : "block");
-  document.body.appendChild(btn);
-});
