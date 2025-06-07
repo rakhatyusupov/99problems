@@ -1,5 +1,11 @@
 let glitchShader, grainShader;
 let drawingSurface, img;
+let textPos,
+  imgPos,
+  drag = null,
+  offX = 0,
+  offY = 0,
+  isLooping = true;
 
 /*────── GRID ──────*/
 function createGrid({ rows, cols, margin, gap, w, h }) {
@@ -18,13 +24,6 @@ function createGrid({ rows, cols, margin, gap, w, h }) {
 }
 /*──────────────────*/
 
-let textPos,
-  imgPos,
-  drag = null,
-  offX = 0,
-  offY = 0,
-  isLooping = true;
-
 function preload() {
   glitchShader = loadShader("filter.vert", "glitch.frag");
   grainShader = loadShader("filter.vert", "grain.frag");
@@ -40,40 +39,35 @@ function setup() {
   drawingSurface = createGraphics(width, height);
   drawingSurface.stroke(255).strokeWeight(2);
   textFont("monospace");
+  resetGridAnchors();
 
-  // начальное размещение на сетке
-  const p = window.AppState.params;
-  const c = createGrid({ ...p, w: width, h: height });
-  textPos = createVector(...random(c));
-  imgPos = createVector(...random(c));
-
-  /* публичные управлялки для UI */
   window.setFPS = (f) => (loop(), frameRate(f));
   window.toggleLoop = () => (
     isLooping ? noLoop() : loop(), (isLooping = !isLooping)
   );
+  window.resetAnchors = resetGridAnchors;
+}
+
+function resetGridAnchors() {
+  const p = window.AppState.params;
+  const c = createGrid({ ...p, w: width, h: height });
+  textPos = createVector(...random(c));
+  imgPos = createVector(...random(c));
 }
 
 function draw() {
   const { userText, grainAmp, showImage, imageSize, fontSize } =
     window.AppState.params;
 
-  // динамическая ручная поверхность
-  drawingSurface.strokeWeight(sin(millis() * 0.002) * 2.5 + 2.5);
-  if (mouseIsPressed) drawingSurface.line(mouseX, mouseY, pmouseX, pmouseY);
   image(drawingSurface, 0, 0);
-
-  // изображение
   if (showImage && img) image(img, imgPos.x, imgPos.y, imageSize, imageSize);
 
-  // текст
   fill(255);
   noStroke();
   textSize(fontSize);
   textAlign(LEFT, TOP);
   text(userText, textPos.x, textPos.y);
 
-  // шейдеры
   grainShader.setUniform("millis", millis());
   grainShader.setUniform("grainAmp", grainAmp);
   filterShader(grainShader);
@@ -83,12 +77,10 @@ function draw() {
   filterShader(glitchShader);
 }
 
-/* ───── Dragging ───── */
 function mousePressed() {
   const p = window.AppState.params;
-  // картинка?
   if (
-    window.AppState.params.showImage &&
+    p.showImage &&
     img &&
     mouseX > imgPos.x &&
     mouseX < imgPos.x + p.imageSize &&
@@ -100,7 +92,6 @@ function mousePressed() {
     offY = mouseY - imgPos.y;
     return;
   }
-  // текст?
   const tw = textWidth(p.userText),
     th = p.fontSize;
   if (
@@ -117,11 +108,15 @@ function mousePressed() {
 
 function mouseDragged() {
   if (!drag) return;
-  if (drag === "img") {
-    imgPos.set(mouseX - offX, mouseY - offY);
-    return;
-  }
-  textPos.set(mouseX - offX, mouseY - offY);
+  const { cols, rows, margin, gap } = window.AppState.params;
+  const colSize = (width - 2 * margin - gap * (cols - 1)) / cols;
+  const rowSize = (height - 2 * margin - gap * (rows - 1)) / rows;
+  let nx = mouseX - offX;
+  let ny = mouseY - offY;
+  nx = margin + round((nx - margin) / (colSize + gap)) * (colSize + gap);
+  ny = margin + round((ny - margin) / (rowSize + gap)) * (rowSize + gap);
+  if (drag === "img") imgPos.set(nx, ny);
+  else textPos.set(nx, ny);
 }
 
 function mouseReleased() {

@@ -52,10 +52,10 @@ document.addEventListener("DOMContentLoaded", () => {
     overlay.appendChild(l);
   };
 
-  // textarea вместо input
   const ltxt = document.createElement("label");
   ltxt.innerText = "Text:";
   const ta = document.createElement("textarea");
+  ta.rows = 4;
   ta.value = window.AppState.params.userText;
   ta.oninput = (e) => window.AppState.setParam("userText", e.target.value);
   ltxt.appendChild(ta);
@@ -69,7 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
   addNum("Margin:", "margin", 0, 500);
   addNum("Gap:", "gap", 0, 200);
 
-  // чекбокс show image
   const cbl = document.createElement("label");
   const cb = Object.assign(document.createElement("input"), {
     type: "checkbox",
@@ -79,7 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
   cbl.append(cb, " Show image");
   overlay.appendChild(cbl);
 
-  // кнопки fps / loop
   const fps20 = document.createElement("button");
   fps20.innerText = "FPS 20";
   fps20.onclick = () => window.setFPS(20);
@@ -89,7 +87,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const loopBtn = document.createElement("button");
   loopBtn.innerText = "Pause / Resume";
   loopBtn.onclick = () => window.toggleLoop();
-  overlay.append(fps20, fps1, loopBtn);
+  const resetBtn = document.createElement("button");
+  resetBtn.innerText = "Reset grid pos";
+  resetBtn.onclick = () => {
+    if (!window.isLooping) window.resetAnchors();
+  };
+
+  overlay.append(fps20, fps1, loopBtn, resetBtn);
 
   document.body.appendChild(overlay);
 
