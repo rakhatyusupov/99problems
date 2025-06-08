@@ -120,6 +120,12 @@ function draw() {
   textObjs.forEach((o) => text(o.text, o.pos.x, o.pos.y));
 
   /* --------- post filters --------- */
+  if (p.usePlasma) {
+    plasmaShader.setUniform("millis", millis());
+    plasmaShader.setUniform("filter_res", [width, height]);
+    filterShader(plasmaShader);
+  }
+
   if (p.useGrain) {
     grainShader.setUniform("millis", millis());
     grainShader.setUniform("grainAmp", p.grainAmp);
@@ -142,11 +148,7 @@ function draw() {
     fresnelShader.setUniform("u_mouse", [mouseX / width, mouseY / height]);
     filterShader(fresnelShader);
   }
-  if (p.usePlasma) {
-    plasmaShader.setUniform("millis", millis());
-    plasmaShader.setUniform("filter_res", [width, height]);
-    filterShader(plasmaShader);
-  }
+
   if (p.useFeedback) {
     feedShader.setUniform("millis", millis());
     feedShader.setUniform("filter_res", [width, height]);

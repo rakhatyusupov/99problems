@@ -46,11 +46,11 @@ float mynoise(vec3 p){ return noise(p); }
 
 float myfbm(vec3 p){
     float f;
-    f  = 0.5000*mynoise( p ); p = m*p*2.02;
-    f += 0.2500*mynoise( p ); p = m*p*2.03;
-    f += 0.1250*mynoise( p ); p = m*p*2.01;
-    f += 0.0625*mynoise( p ); p = m*p*2.05;
-    f += 0.03125*mynoise( p );p = m*p*2.02;
+    f  = 0.05000*mynoise( p ); p = m*p*0.02;
+    f += 0.02500*mynoise( p ); p = m*p*0.03;
+    f += 0.01250*mynoise( p ); p = m*p*0.01;
+    f += 0.00*mynoise( p ); p = m*p*0.05;
+    f += 0.03125*mynoise( p );p = m*p*0.02;
     f += 0.015625*mynoise( p );
     return f;
 }
