@@ -2,11 +2,9 @@
 let glitchShader, grainShader;
 let drawingSurface, img;
 let textPos, imgPos;
-// drag modes: 'img', 'txt'
 let drag = null,
   offX = 0,
   offY = 0;
-// dropped images drag info
 let dragInfo = null;
 let droppedImages = [];
 let isLooping = true;
@@ -56,12 +54,12 @@ function setup() {
 
 function handleFile(file) {
   if (file.type === "image") {
-    loadImage(file.data, (loaded) => {
+    loadImage(file.data, (l) => {
       droppedImages.push({
-        img: loaded,
+        img: l,
+        aspect: l.width / l.height,
         x: mouseX,
         y: mouseY,
-        aspect: loaded.width / loaded.height,
       });
     });
   }
@@ -81,37 +79,43 @@ function resetGridAnchors() {
   imgPos = createVector(...random(corners));
 }
 
+function colSize() {
+  const p = window.AppState.params;
+  return (width - 2 * p.margin - p.gap * (p.cols - 1)) / p.cols;
+}
+
+// Вычисляет размеры картинки в колонках p.imageCols
+function imgDims(aspect) {
+  const p = window.AppState.params;
+  const w = p.imageCols * colSize() + p.gap * (p.imageCols - 1);
+  return { w, h: w / aspect };
+}
+
 function draw() {
   const p = window.AppState.params;
   image(drawingSurface, 0, 0);
 
-  // initial image
   if (p.showImage && img) {
-    const h0 = p.imageSize;
-    const w0 = h0 * (img.width / img.height);
-    image(img, imgPos.x, imgPos.y, w0, h0);
+    const { w, h } = imgDims(img.width / img.height);
+    image(img, imgPos.x, imgPos.y, w, h);
   }
 
-  // dropped images
   droppedImages.forEach((o) => {
-    const h0 = p.imageSize;
-    const w0 = h0 * o.aspect;
-    image(o.img, o.x, o.y, w0, h0);
+    const { w, h } = imgDims(o.aspect);
+    image(o.img, o.x, o.y, w, h);
   });
 
-  // text
   fill(255);
   noStroke();
   textSize(p.fontSize);
   textAlign(LEFT, TOP);
   text(p.userText, textPos.x, textPos.y);
 
-  // shaders
   grainShader.setUniform("millis", millis());
   grainShader.setUniform("grainAmp", p.grainAmp);
   filterShader(grainShader);
 
-  glitchShader.setUniform("noise", millis() / 100);
+  glitchShader.setUniform("noise", noise(millis() / 100));
   glitchShader.setUniform("millis", millis());
   filterShader(glitchShader);
 }
@@ -119,15 +123,13 @@ function draw() {
 function mousePressed() {
   const p = window.AppState.params;
 
-  // drag initial image
   if (p.showImage && img) {
-    const h0 = p.imageSize;
-    const w0 = h0 * (img.width / img.height);
+    const { w, h } = imgDims(img.width / img.height);
     if (
       mouseX > imgPos.x &&
-      mouseX < imgPos.x + w0 &&
+      mouseX < imgPos.x + w &&
       mouseY > imgPos.y &&
-      mouseY < imgPos.y + h0
+      mouseY < imgPos.y + h
     ) {
       drag = "img";
       offX = mouseX - imgPos.x;
@@ -136,17 +138,10 @@ function mousePressed() {
     }
   }
 
-  // drag dropped images
   for (let i = droppedImages.length - 1; i >= 0; i--) {
     const o = droppedImages[i];
-    const h0 = p.imageSize;
-    const w0 = h0 * o.aspect;
-    if (
-      mouseX > o.x &&
-      mouseX < o.x + w0 &&
-      mouseY > o.y &&
-      mouseY < o.y + h0
-    ) {
+    const { w, h } = imgDims(o.aspect);
+    if (mouseX > o.x && mouseX < o.x + w && mouseY > o.y && mouseY < o.y + h) {
       dragInfo = { idx: i };
       offX = mouseX - o.x;
       offY = mouseY - o.y;
@@ -154,7 +149,6 @@ function mousePressed() {
     }
   }
 
-  // drag text
   const tw = textWidth(p.userText);
   const th = p.fontSize;
   if (
@@ -171,29 +165,21 @@ function mousePressed() {
 
 function mouseDragged() {
   const p = window.AppState.params;
-  const colSize = (width - 2 * p.margin - p.gap * (p.cols - 1)) / p.cols;
-  const rowSize = (height - 2 * p.margin - p.gap * (p.rows - 1)) / p.rows;
+  const stepX = colSize() + p.gap;
+  const stepY = (height - 2 * p.margin - p.gap * (p.rows - 1)) / p.rows + p.gap;
 
-  // snap-drag initial or text
+  const snap = (x, y) => ({
+    nx: p.margin + round((x - p.margin) / stepX) * stepX,
+    ny: p.margin + round((y - p.margin) / stepY) * stepY,
+  });
+
   if (drag) {
-    let nx = mouseX - offX;
-    let ny = mouseY - offY;
-    nx =
-      p.margin + round((nx - p.margin) / (colSize + p.gap)) * (colSize + p.gap);
-    ny =
-      p.margin + round((ny - p.margin) / (rowSize + p.gap)) * (rowSize + p.gap);
+    const { nx, ny } = snap(mouseX - offX, mouseY - offY);
     if (drag === "img") imgPos.set(nx, ny);
     else textPos.set(nx, ny);
-  }
-  // snap-drag dropped
-  else if (dragInfo) {
+  } else if (dragInfo) {
+    const { nx, ny } = snap(mouseX - offX, mouseY - offY);
     const o = droppedImages[dragInfo.idx];
-    let nx = mouseX - offX;
-    let ny = mouseY - offY;
-    nx =
-      p.margin + round((nx - p.margin) / (colSize + p.gap)) * (colSize + p.gap);
-    ny =
-      p.margin + round((ny - p.margin) / (rowSize + p.gap)) * (rowSize + p.gap);
     o.x = nx;
     o.y = ny;
   }
