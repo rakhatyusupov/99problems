@@ -52,7 +52,11 @@ function handleText() {
 function preload() {
   glitchShader = loadShader("filter.vert", "glitch.frag");
   grainShader = loadShader("filter.vert", "grain.frag");
-  noiseShader = loadShader("filter.vert", "noise.frag"); // ← new
+  noiseShader = loadShader("filter.vert", "noise.frag");
+  fresnelShader = loadShader("filter.vert", "fresnel.frag");
+  plasmaShader = loadShader("filter.vert", "plasma.frag");
+  feedShader = loadShader("filter.vert", "feedback.frag");
+
   img = loadImage(
     "P20191_10.jpg",
     () => {},
@@ -130,6 +134,23 @@ function draw() {
     noiseShader.setUniform("millis", millis());
     noiseShader.setUniform("filter_res", [width, height]);
     filterShader(noiseShader);
+  }
+
+  if (p.useFresnel) {
+    fresnelShader.setUniform("millis", millis());
+    fresnelShader.setUniform("filter_res", [width, height]);
+    fresnelShader.setUniform("u_mouse", [mouseX / width, mouseY / height]);
+    filterShader(fresnelShader);
+  }
+  if (p.usePlasma) {
+    plasmaShader.setUniform("millis", millis());
+    plasmaShader.setUniform("filter_res", [width, height]);
+    filterShader(plasmaShader);
+  }
+  if (p.useFeedback) {
+    feedShader.setUniform("millis", millis());
+    feedShader.setUniform("filter_res", [width, height]);
+    filterShader(feedShader);
   }
 }
 
