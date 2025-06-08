@@ -38,11 +38,9 @@ const imgDims = (aspect) => {
 /* ───────── TEXT HANDLER ───────── */
 function handleText() {
   const parts = window.AppState.params.userText.split("/").filter(Boolean);
-  // синхронизация длины массивов
   while (textObjs.length < parts.length)
     textObjs.push({ text: "", pos: randGridPos() });
   while (textObjs.length > parts.length) textObjs.pop();
-
   parts.forEach((t, i) => (textObjs[i].text = t));
 }
 
@@ -61,14 +59,14 @@ function setup() {
   cnv.drop(
     (file) =>
       file.type === "image" &&
-      loadImage(file.data, (l) => {
+      loadImage(file.data, (l) =>
         droppedImages.push({
           img: l,
           aspect: l.width / l.height,
           x: mouseX,
           y: mouseY,
-        });
-      })
+        })
+      )
   );
   drawingSurface = createGraphics(width, height);
   textFont("monospace");
@@ -88,8 +86,9 @@ function setup() {
 
 /* ───────── DRAW ───────── */
 function draw() {
-  handleText(); // обновляем тексты при каждом кадре
+  handleText();
   const p = window.AppState.params;
+
   image(drawingSurface, 0, 0);
 
   if (p.showImage && img) {
@@ -100,25 +99,28 @@ function draw() {
     const { w, h } = imgDims(o.aspect);
     image(o.img, o.x, o.y, w, h);
   });
+
   fill(255);
   noStroke();
   textSize(p.fontSize);
   textAlign(LEFT, TOP);
   textObjs.forEach((o) => text(o.text, o.pos.x, o.pos.y));
 
-  grainShader.setUniform("millis", millis());
-  grainShader.setUniform("grainAmp", p.grainAmp);
-  filterShader(grainShader);
-
-  glitchShader.setUniform("noise", noise(millis() / 100));
-  glitchShader.setUniform("millis", millis());
-  filterShader(glitchShader);
+  if (p.useGrain) {
+    grainShader.setUniform("millis", millis());
+    grainShader.setUniform("grainAmp", p.grainAmp);
+    filterShader(grainShader);
+  }
+  if (p.useGlitch) {
+    glitchShader.setUniform("noise", millis() / 100);
+    glitchShader.setUniform("millis", millis());
+    filterShader(glitchShader);
+  }
 }
 
 /* ───────── DRAG ───────── */
 function mousePressed() {
   const p = window.AppState.params;
-  // базовая картинка
   if (p.showImage && img) {
     const { w, h } = imgDims(img.width / img.height);
     if (
@@ -133,7 +135,6 @@ function mousePressed() {
       return;
     }
   }
-  // dnd картинки
   for (let i = droppedImages.length - 1; i >= 0; i--) {
     const o = droppedImages[i],
       { w, h } = imgDims(o.aspect);
@@ -145,7 +146,6 @@ function mousePressed() {
       return;
     }
   }
-  // текст
   for (let i = textObjs.length - 1; i >= 0; i--) {
     const o = textObjs[i],
       tw = textWidth(o.text),
