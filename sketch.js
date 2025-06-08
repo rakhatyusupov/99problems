@@ -53,9 +53,11 @@ function preload() {
     () => {},
     () => (img = null)
   );
+  interFont = loadFont("InterTight-VariableFont_wght.ttf");
 }
 function setup() {
   const cnv = createCanvas(800, 800);
+  textFont(interFont);
   cnv.drop(
     (file) =>
       file.type === "image" &&
@@ -69,7 +71,7 @@ function setup() {
       )
   );
   drawingSurface = createGraphics(width, height);
-  textFont("monospace");
+  textFont(interFont);
 
   imgPos = randGridPos();
   handleText();
