@@ -1,9 +1,13 @@
 // sketch.js  — упрощённая схема: один «обработчик текста»
 // --------------------------------------------------------
-let glitchShader, grainShader;
+// --------------------------------------------------------
+//  Main p5 sketch with three optional post-filters:
+//  grain, glitch, noise
+// --------------------------------------------------------
+let glitchShader, grainShader, noiseShader;
 let drawingSurface, img;
 
-let textObjs = []; // [{text, pos}]
+let textObjs = []; // [{ text , pos }]
 let imgPos;
 
 let drag = null,
@@ -48,16 +52,15 @@ function handleText() {
 function preload() {
   glitchShader = loadShader("filter.vert", "glitch.frag");
   grainShader = loadShader("filter.vert", "grain.frag");
+  noiseShader = loadShader("filter.vert", "noise.frag"); // ← new
   img = loadImage(
     "P20191_10.jpg",
     () => {},
     () => (img = null)
   );
-  interFont = loadFont("InterTight-VariableFont_wght.ttf");
 }
 function setup() {
   const cnv = createCanvas(800, 800);
-  textFont(interFont);
   cnv.drop(
     (file) =>
       file.type === "image" &&
@@ -71,7 +74,7 @@ function setup() {
       )
   );
   drawingSurface = createGraphics(width, height);
-  textFont(interFont);
+  textFont("monospace");
 
   imgPos = randGridPos();
   handleText();
@@ -83,6 +86,10 @@ function setup() {
   window.toggleLoop = () => {
     isLooping ? noLoop() : loop();
     isLooping = !isLooping;
+  };
+  window.resetAnchors = () => {
+    imgPos = randGridPos();
+    textObjs.forEach((o) => (o.pos = randGridPos()));
   };
 }
 
@@ -108,15 +115,21 @@ function draw() {
   textAlign(LEFT, TOP);
   textObjs.forEach((o) => text(o.text, o.pos.x, o.pos.y));
 
+  /* --------- post filters --------- */
   if (p.useGrain) {
     grainShader.setUniform("millis", millis());
     grainShader.setUniform("grainAmp", p.grainAmp);
     filterShader(grainShader);
   }
   if (p.useGlitch) {
-    glitchShader.setUniform("noise", millis() / 100);
+    glitchShader.setUniform("noise", noise(millis() / 100.0));
     glitchShader.setUniform("millis", millis());
     filterShader(glitchShader);
+  }
+  if (p.useNoise) {
+    noiseShader.setUniform("millis", millis());
+    noiseShader.setUniform("filter_res", [width, height]);
+    filterShader(noiseShader);
   }
 }
 

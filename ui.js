@@ -1,12 +1,12 @@
-// ui.js
 window.AppState = {
   params: {
-    userText: "Hello\nworld",
+    userText: "Hello/world",
     grainAmp: 0.1,
     useGrain: true,
     useGlitch: true,
+    useNoise: false, // ← новый фильтр
     showImage: true,
-    imageCols: 1, // ширина картинки в колонках сетки
+    imageCols: 1,
     fontSize: 24,
     rows: 4,
     cols: 4,
@@ -19,114 +19,89 @@ window.AppState = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  const overlay = document.createElement("div");
-  overlay.id = "settingsOverlay";
+  const overlay = Object.assign(document.createElement("div"), {
+    id: "settingsOverlay",
+  });
   overlay.style.display = "none";
   overlay.appendChild(
     Object.assign(document.createElement("h2"), { innerText: "Настройки" })
   );
 
-  // три колонки
-  const col1 = document.createElement("div");
-  col1.className = "overlayColumn";
-  const col2 = document.createElement("div");
-  col2.className = "overlayColumn";
-  const col3 = document.createElement("div");
-  col3.className = "overlayColumn";
+  // три колонки-div
+  const col1 = document.createElement("div"),
+    col2 = document.createElement("div"),
+    col3 = document.createElement("div");
+  col1.className = col2.className = col3.className = "overlayColumn";
   overlay.append(col1, col2, col3);
 
-  // --------- COL1: фильтры и кнопки ---------
-  // Grain filter
-  {
-    const lbl = document.createElement("label");
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.checked = window.AppState.params.useGrain;
-    cb.onchange = (e) => window.AppState.setParam("useGrain", e.target.checked);
-    lbl.append(cb, " Grain filter");
-    col1.appendChild(lbl);
-  }
-  // Glitch filter
-  {
-    const lbl = document.createElement("label");
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.checked = window.AppState.params.useGlitch;
-    cb.onchange = (e) =>
-      window.AppState.setParam("useGlitch", e.target.checked);
-    lbl.append(cb, " Glitch filter");
-    col1.appendChild(lbl);
-  }
-  // кнопки управления
+  /* ----- COL1 : фильтры + кнопки ----- */
   [
-    { txt: "FPS 20", fn: () => window.setFPS(20) },
-    { txt: "FPS 1", fn: () => window.setFPS(1) },
-    { txt: "Pause/Resume", fn: () => window.toggleLoop() },
-    { txt: "Reset grid pos", fn: () => window.resetAnchors() },
-  ].forEach(({ txt, fn }) => {
-    const btn = document.createElement("button");
-    btn.innerText = txt;
-    btn.onclick = fn;
-    col1.appendChild(btn);
+    { txt: "Grain filter", key: "useGrain" },
+    { txt: "Glitch filter", key: "useGlitch" },
+    { txt: "Noise filter", key: "useNoise" }, // ← добавлено
+  ].forEach(({ txt, key }) => {
+    const lbl = document.createElement("label");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = window.AppState.params[key];
+    cb.onchange = (e) => window.AppState.setParam(key, e.target.checked);
+    lbl.append(cb, " ", txt);
+    col1.appendChild(lbl);
   });
 
-  // --------- COL2: текст и слайдеры ---------
-  // textarea для текста
-  {
-    const lbl = document.createElement("label");
-    lbl.innerText = "Text:";
-    const ta = document.createElement("textarea");
-    ta.rows = 4;
-    ta.value = window.AppState.params.userText;
-    ta.oninput = (e) => window.AppState.setParam("userText", e.target.value);
-    lbl.appendChild(ta);
-    col2.appendChild(lbl);
-  }
-  // Grain amplitude
-  {
-    const lbl = document.createElement("label");
-    lbl.innerText = "Grain amp:";
-    const input = document.createElement("input");
-    input.type = "range";
-    input.min = 0;
-    input.max = 1;
-    input.step = 0.01;
-    input.value = window.AppState.params.grainAmp;
-    input.oninput = (e) =>
-      window.AppState.setParam("grainAmp", +e.target.value);
-    lbl.appendChild(input);
-    col2.appendChild(lbl);
-  }
-  // Font size
-  {
-    const lbl = document.createElement("label");
-    lbl.innerText = "Font size:";
-    const input = document.createElement("input");
-    input.type = "range";
-    input.min = 12;
-    input.max = 200;
-    input.step = 1;
-    input.value = window.AppState.params.fontSize;
-    input.oninput = (e) =>
-      window.AppState.setParam("fontSize", +e.target.value);
-    lbl.appendChild(input);
-    col2.appendChild(lbl);
-  }
+  /* управление FPS / loop */
+  [
+    { t: "FPS 20", fn: () => window.setFPS(20) },
+    { t: "FPS 1", fn: () => window.setFPS(1) },
+    { t: "Pause/Resume", fn: () => window.toggleLoop() },
+    { t: "Reset grid pos", fn: () => window.resetAnchors() },
+  ].forEach(({ t, fn }) => {
+    const b = document.createElement("button");
+    b.innerText = t;
+    b.onclick = fn;
+    col1.appendChild(b);
+  });
 
-  // --------- COL3: числовые настройки и imageCols ---------
+  /* ----- COL2 : текст и слайдеры ----- */
+  const addRange = (txt, key, min, max, step) => {
+    const lbl = document.createElement("label");
+    lbl.innerText = txt;
+    const r = Object.assign(document.createElement("input"), {
+      type: "range",
+      min,
+      max,
+      step,
+      value: window.AppState.params[key],
+    });
+    r.oninput = (e) => window.AppState.setParam(key, +e.target.value);
+    lbl.appendChild(r);
+    col2.appendChild(lbl);
+  };
+  const lblT = document.createElement("label");
+  lblT.innerText = "Text:";
+  const ta = document.createElement("textarea");
+  ta.rows = 4;
+  ta.value = window.AppState.params.userText;
+  ta.oninput = (e) => window.AppState.setParam("userText", e.target.value);
+  lblT.appendChild(ta);
+  col2.appendChild(lblT);
+  addRange("Grain amp:", "grainAmp", 0, 1, 0.01);
+  addRange("Font size:", "fontSize", 12, 200, 1);
+
+  /* ----- COL3 : числа + image width ----- */
   const addNum = (txt, key, min, max) => {
     const lbl = document.createElement("label");
     lbl.innerText = txt;
-    const input = document.createElement("input");
-    input.type = "number";
-    input.min = min;
-    input.max = max;
-    input.value = window.AppState.params[key];
-    input.oninput = (e) => {
+    const n = document.createElement("input");
+    n.type = "number";
+    n.min = min;
+    n.max = max;
+    n.value = window.AppState.params[key];
+    n.oninput = (e) => {
       window.AppState.setParam(key, +e.target.value);
-      updateImageColsMax();
+      updateImgSlider();
     };
-    lbl.appendChild(input);
+    lbl.appendChild(n);
     col3.appendChild(lbl);
   };
   addNum("Rows:", "rows", 1, 50);
@@ -134,43 +109,35 @@ document.addEventListener("DOMContentLoaded", () => {
   addNum("Margin:", "margin", 0, 500);
   addNum("Gap:", "gap", 0, 200);
 
-  // Image width in cols
-  {
-    const lbl = document.createElement("label");
-    lbl.innerText = "Image width (cols):";
-    const slider = document.createElement("input");
-    slider.type = "range";
-    slider.min = 1;
-    slider.step = 1;
-    const updateImageColsMax = () => {
-      const max = window.AppState.params.cols;
-      slider.max = String(max);
-      if (window.AppState.params.imageCols > max) {
-        window.AppState.setParam("imageCols", max);
-      }
-      slider.value = window.AppState.params.imageCols;
-    };
-    slider.oninput = (e) =>
-      window.AppState.setParam("imageCols", +e.target.value);
-    updateImageColsMax();
-    lbl.appendChild(slider);
-    col3.appendChild(lbl);
-  }
-  // Show image checkbox
-  {
-    const lbl = document.createElement("label");
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.checked = window.AppState.params.showImage;
-    cb.onchange = (e) =>
-      window.AppState.setParam("showImage", e.target.checked);
-    lbl.append(cb, " Show image");
-    col3.appendChild(lbl);
-  }
+  // slider imageCols
+  const lblImg = document.createElement("label");
+  lblImg.innerText = "Image width (cols):";
+  const s = document.createElement("input");
+  s.type = "range";
+  s.min = 1;
+  s.step = 1;
+  const updateImgSlider = () => {
+    s.max = window.AppState.params.cols;
+    if (window.AppState.params.imageCols > +s.max)
+      window.AppState.setParam("imageCols", +s.max);
+    s.value = window.AppState.params.imageCols;
+  };
+  s.oninput = (e) => window.AppState.setParam("imageCols", +e.target.value);
+  updateImgSlider();
+  lblImg.appendChild(s);
+  col3.appendChild(lblImg);
+
+  // show image
+  const lblShow = document.createElement("label");
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.checked = window.AppState.params.showImage;
+  cb.onchange = (e) => window.AppState.setParam("showImage", e.target.checked);
+  lblShow.append(cb, " Show image");
+  col3.appendChild(lblShow);
 
   document.body.appendChild(overlay);
 
-  // gear button
   const gear = document.createElement("button");
   gear.id = "toggleButton";
   gear.innerText = "⚙️";
