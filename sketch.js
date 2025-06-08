@@ -56,6 +56,7 @@ function preload() {
   fresnelShader = loadShader("filter.vert", "fresnel.frag");
   plasmaShader = loadShader("filter.vert", "plasma.frag");
   feedShader = loadShader("filter.vert", "feedback.frag");
+  flowingShader = loadShader("filter.vert", "flowing.frag");
 
   img = loadImage(
     "P20191_10.jpg",
@@ -65,6 +66,7 @@ function preload() {
 }
 function setup() {
   const cnv = createCanvas(800, 800);
+  pixelDensity(2);
   cnv.drop(
     (file) =>
       file.type === "image" &&
@@ -153,6 +155,12 @@ function draw() {
     feedShader.setUniform("millis", millis());
     feedShader.setUniform("filter_res", [width, height]);
     filterShader(feedShader);
+  }
+
+  if (p.useFlowing) {
+    flowingShader.setUniform("millis", millis());
+    flowingShader.setUniform("filter_res", [width, height]);
+    filterShader(flowingShader);
   }
 }
 

@@ -9,6 +9,7 @@ window.AppState = {
     useFresnel: false,
     usePlasma: false,
     useFeedback: false,
+    useFlowing: false,
     imageCols: 1,
     fontSize: 24,
     rows: 4,
@@ -45,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
     { txt: "Fresnel", key: "useFresnel" },
     { txt: "Plasma", key: "usePlasma" },
     { txt: "Feedback", key: "useFeedback" },
+    { txt: "Flowing", key: "useFlowing" },
   ].forEach(({ txt, key }) => {
     const lbl = document.createElement("label");
     const cb = document.createElement("input");
