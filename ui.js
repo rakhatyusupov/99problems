@@ -69,6 +69,10 @@ window.AppState = {
 window.AppState.updateCanvasSize();
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Добавим стили для новых классов
+  const style = document.createElement("style");
+  document.head.appendChild(style);
+
   // контейнер + overlay
   const overlayContainer = document.createElement("div");
   overlayContainer.id = "settingsOverlayContainer";
@@ -99,6 +103,10 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   /* ----- COL1 : фильтры ----- */
+  // Контейнер для чекбоксов в две колонки
+  const shadersContainer = document.createElement("div");
+  shadersContainer.className = "shaders-container";
+
   [
     { txt: "Grain filter", key: "useGrain" },
     { txt: "Glitch filter", key: "useGlitch" },
@@ -114,10 +122,12 @@ document.addEventListener("DOMContentLoaded", () => {
     cb.checked = window.AppState.params[key];
     cb.onchange = (e) => window.AppState.setParam(key, e.target.checked);
     lbl.append(cb, " ", txt);
-    col1.appendChild(lbl);
+    shadersContainer.appendChild(lbl);
   });
 
-  // grain amp moved to col1
+  col1.appendChild(shadersContainer);
+
+  // grain amp
   {
     const lbl = document.createElement("label");
     lbl.innerText = "Grain amp:";
@@ -133,9 +143,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ----- COL2 : текст, зерно, шрифты, сетка и изображения ----- */
-  // текстовая область
+  // текстовая область с классом для фиксации ширины
   {
     const lbl = document.createElement("label");
+    lbl.className = "fixed-textarea";
     lbl.innerText = "Text:";
     const ta = document.createElement("textarea");
     ta.rows = 4;
@@ -144,6 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
     lbl.appendChild(ta);
     col2.appendChild(lbl);
   }
+
   // font size
   {
     const lbl = document.createElement("label");
@@ -158,6 +170,11 @@ document.addEventListener("DOMContentLoaded", () => {
     lbl.appendChild(r);
     col2.appendChild(lbl);
   }
+
+  // Контейнер для сетки в две колонки
+  const gridContainer = document.createElement("div");
+  gridContainer.className = "grid-controls";
+
   // сетка: rows, cols, margin, gap
   const addNum = (txt, key, min, max) => {
     const lbl = document.createElement("label");
@@ -169,12 +186,16 @@ document.addEventListener("DOMContentLoaded", () => {
     n.value = window.AppState.params[key];
     n.oninput = (e) => window.AppState.setParam(key, +e.target.value);
     lbl.appendChild(n);
-    col2.appendChild(lbl);
+    gridContainer.appendChild(lbl);
   };
+
   addNum("Rows:", "rows", 1, 50);
   addNum("Cols:", "cols", 1, 50);
   addNum("Margin:", "margin", 0, 500);
   addNum("Gap:", "gap", 0, 200);
+
+  col2.appendChild(gridContainer);
+
   // imageCols slider
   {
     const lbl = document.createElement("label");
@@ -195,6 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
     lbl.appendChild(s);
     col2.appendChild(lbl);
   }
+
   // show image checkbox
   {
     const lbl = document.createElement("label");
@@ -246,8 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const customSizeGroup = document.createElement("div");
   customSizeGroup.style.display =
     window.AppState.params.canvasSize.mode === "custom" ? "flex" : "none";
-  customSizeGroup.style.flexDirection = "column";
-  customSizeGroup.style.gap = "8px";
+  customSizeGroup.className = "custom-size-grid";
 
   // Поле для ширины
   {
@@ -285,6 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const applySizeBtn = document.createElement("button");
   applySizeBtn.textContent = "Применить размер";
   applySizeBtn.style.marginTop = "10px";
+  applySizeBtn.style.width = "100%";
   applySizeBtn.onclick = () => {
     localStorage.setItem(
       "canvasSettings",
@@ -309,6 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btn = document.createElement("button");
     btn.innerText = txt;
     btn.onclick = fn;
+    btn.style.width = "100%";
     col3.appendChild(btn);
   });
 

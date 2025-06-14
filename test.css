@@ -220,3 +220,33 @@ select {
 canvas {
   display: block;
 }
+
+.two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.shaders-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.shaders-container label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fixed-textarea textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.custom-size-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.grid-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
