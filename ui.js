@@ -23,20 +23,37 @@ window.AppState = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Создаем контейнер для overlay
+  const overlayContainer = Object.assign(document.createElement("div"), {
+    id: "settingsOverlayContainer",
+  });
+
+  // Создаем сам overlay
   const overlay = Object.assign(document.createElement("div"), {
     id: "settingsOverlay",
   });
-  overlay.style.display = "none";
-  overlay.appendChild(
-    Object.assign(document.createElement("h2"), { innerText: "Настройки" })
-  );
 
-  // три колонки-div
+  // Добавляем заголовок
+
+  // Создаем три колонки
   const col1 = document.createElement("div"),
     col2 = document.createElement("div"),
     col3 = document.createElement("div");
+
   col1.className = col2.className = col3.className = "overlayColumn";
   overlay.append(col1, col2, col3);
+
+  // Добавляем заголовки для второй и третьей колонки
+
+  col1.appendChild(
+    Object.assign(document.createElement("h3"), { innerText: "Заголовок 1" })
+  );
+  col2.appendChild(
+    Object.assign(document.createElement("h3"), { innerText: "Заголовок 2" })
+  );
+  col3.appendChild(
+    Object.assign(document.createElement("h3"), { innerText: "Заголовок 3" })
+  );
 
   /* ----- COL1 : фильтры + кнопки ----- */
   [
@@ -70,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
     col1.appendChild(b);
   });
 
-  /* ----- COL2 : текст и слайдеры ----- */
+  /* ----- COL1 : текст и слайдеры ----- */
   const addRange = (txt, key, min, max, step) => {
     const lbl = document.createElement("label");
     lbl.innerText = txt;
@@ -83,8 +100,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     r.oninput = (e) => window.AppState.setParam(key, +e.target.value);
     lbl.appendChild(r);
-    col2.appendChild(lbl);
+    col1.appendChild(lbl);
   };
+
   const lblT = document.createElement("label");
   lblT.innerText = "Text:";
   const ta = document.createElement("textarea");
@@ -92,11 +110,12 @@ document.addEventListener("DOMContentLoaded", () => {
   ta.value = window.AppState.params.userText;
   ta.oninput = (e) => window.AppState.setParam("userText", e.target.value);
   lblT.appendChild(ta);
-  col2.appendChild(lblT);
+  col1.appendChild(lblT);
+
   addRange("Grain amp:", "grainAmp", 0, 1, 0.01);
   addRange("Font size:", "fontSize", 12, 200, 1);
 
-  /* ----- COL3 : числа + image width ----- */
+  /* ----- COL1 : числа + image width ----- */
   const addNum = (txt, key, min, max) => {
     const lbl = document.createElement("label");
     lbl.innerText = txt;
@@ -110,8 +129,9 @@ document.addEventListener("DOMContentLoaded", () => {
       updateImgSlider();
     };
     lbl.appendChild(n);
-    col3.appendChild(lbl);
+    col1.appendChild(lbl);
   };
+
   addNum("Rows:", "rows", 1, 50);
   addNum("Cols:", "cols", 1, 50);
   addNum("Margin:", "margin", 0, 500);
@@ -124,33 +144,41 @@ document.addEventListener("DOMContentLoaded", () => {
   s.type = "range";
   s.min = 1;
   s.step = 1;
+
   const updateImgSlider = () => {
     s.max = window.AppState.params.cols;
-    if (window.AppState.params.imageCols > +s.max)
+    if (window.AppState.params.imageCols > +s.max) {
       window.AppState.setParam("imageCols", +s.max);
+    }
     s.value = window.AppState.params.imageCols;
   };
+
   s.oninput = (e) => window.AppState.setParam("imageCols", +e.target.value);
   updateImgSlider();
   lblImg.appendChild(s);
-  col3.appendChild(lblImg);
+  col1.appendChild(lblImg);
 
   // show image
   const lblShow = document.createElement("label");
-  const cb = document.createElement("input");
-  cb.type = "checkbox";
-  cb.checked = window.AppState.params.showImage;
-  cb.onchange = (e) => window.AppState.setParam("showImage", e.target.checked);
-  lblShow.append(cb, " Show image");
-  col3.appendChild(lblShow);
+  const cbShow = document.createElement("input");
+  cbShow.type = "checkbox";
+  cbShow.checked = window.AppState.params.showImage;
+  cbShow.onchange = (e) =>
+    window.AppState.setParam("showImage", e.target.checked);
+  lblShow.append(cbShow, " Show image");
+  col1.appendChild(lblShow);
 
-  document.body.appendChild(overlay);
+  // Добавляем overlay в контейнер и контейнер в body
+  overlayContainer.appendChild(overlay);
+  document.body.appendChild(overlayContainer);
 
+  // Кнопка переключения overlay
   const gear = document.createElement("button");
   gear.id = "toggleButton";
   gear.innerText = "⚙️";
-  gear.onclick = () =>
-    (overlay.style.display =
-      overlay.style.display === "block" ? "none" : "block");
+  gear.onclick = () => {
+    overlayContainer.style.display =
+      overlayContainer.style.display === "flex" ? "none" : "flex";
+  };
   document.body.appendChild(gear);
 });

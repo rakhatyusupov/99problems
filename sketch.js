@@ -59,7 +59,7 @@ function preload() {
   flowingShader = loadShader("filter.vert", "flowing.frag");
 
   img = loadImage(
-    "P20191_10.jpg",
+    "blue-clouds-day-fluffy-53594 (1).jpeg",
     () => {},
     () => (img = null)
   );

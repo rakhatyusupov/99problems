@@ -23,15 +23,36 @@ body {
 /* Overlay-панель (скрыта по умолчанию) */
 #settingsOverlay {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 250px;
-  background: rgba(0, 0, 0, 0.7);
+  top: 0;
+  left: 0;
+  width: 100vw; /* ширина окна */
+  height: auto;
+  background: rgba(0, 0, 0, 0.9);
   color: #fff;
-  padding: 12px;
-  border-radius: 8px;
-  display: none; /* по умолчанию скрыта */
+  padding: 24px 32px;
+  display: none;
   z-index: 1000;
+  box-sizing: border-box;
+  border-radius: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+}
+
+#settingsOverlayContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: auto;
+  display: none;
+  z-index: 1000;
+  box-sizing: border-box;
+  padding: 24px 32px;
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  flex-direction: row;
+  gap: 32px;
 }
 
 #settingsOverlay.active {
@@ -39,13 +60,21 @@ body {
   left: 0;
   right: 0;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: space-between;
   padding: 24px;
   gap: 32px;
 }
 
 .settings-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 200px;
+}
+
+.overlayColumn {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -66,10 +95,15 @@ body {
 
 #settingsOverlay input[type="text"],
 #settingsOverlay input[type="number"],
-#settingsOverlay input[type="range"] {
+#settingsOverlay input[type="range"],
+#settingsOverlay textarea {
   width: 100%;
   margin-top: 4px;
   box-sizing: border-box;
+  background-color: #1a1a1a;
+  color: white;
+  border: 1px solid #555;
+  padding: 4px;
 }
 
 #settingsOverlay input[type="checkbox"] {
