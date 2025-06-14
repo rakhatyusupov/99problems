@@ -16,11 +16,57 @@ window.AppState = {
     cols: 4,
     margin: 20,
     gap: 10,
+    // Объект для управления размерами холста
+    canvasSize: {
+      mode: "1:1", // '1:1', '2:3', '3:2', 'full-width', 'custom'
+      width: 800,
+      height: 800,
+    },
   },
   setParam(k, v) {
-    this.params[k] = v;
+    // Специальная обработка для размеров холста
+    if (k === "canvasSizeMode") {
+      this.params.canvasSize.mode = v;
+      this.updateCanvasSize();
+    } else if (k === "canvasWidth") {
+      this.params.canvasSize.width = v;
+      this.params.canvasSize.mode = "custom";
+    } else if (k === "canvasHeight") {
+      this.params.canvasSize.height = v;
+      this.params.canvasSize.mode = "custom";
+    } else {
+      this.params[k] = v;
+    }
+  },
+
+  // Метод для обновления размеров холста в зависимости от режима
+  updateCanvasSize() {
+    const size = this.params.canvasSize;
+
+    switch (size.mode) {
+      case "1:1":
+        size.width = 800;
+        size.height = 800;
+        break;
+      case "2:3":
+        size.width = 800;
+        size.height = 1200;
+        break;
+      case "3:2":
+        size.width = 1200;
+        size.height = 800;
+        break;
+      case "full-width":
+        size.width = window.innerWidth;
+        size.height = window.innerHeight;
+        break;
+      // Для custom размеры остаются как есть
+    }
   },
 };
+
+// Инициализация размеров холста
+window.AppState.updateCanvasSize();
 
 document.addEventListener("DOMContentLoaded", () => {
   // контейнер + overlay
@@ -161,7 +207,99 @@ document.addEventListener("DOMContentLoaded", () => {
     col2.appendChild(lbl);
   }
 
-  /* ----- COL3 : кнопки управления ----- */
+  /* ----- COL3 : кнопки управления и настройки ----- */
+  // Заголовок для настроек холста
+  col3.appendChild(
+    Object.assign(document.createElement("h4"), { innerText: "Размер холста" })
+  );
+
+  // Выпадающий список для выбора соотношения
+  const aspectSelect = document.createElement("select");
+  aspectSelect.style.width = "100%";
+  aspectSelect.style.marginBottom = "12px";
+
+  const aspectOptions = [
+    { value: "1:1", text: "1:1 (800×800)" },
+    { value: "2:3", text: "2:3 (800×1200)" },
+    { value: "3:2", text: "3:2 (1200×800)" },
+    { value: "full-width", text: "Во всю ширину" },
+    { value: "custom", text: "Кастомный размер" },
+  ];
+
+  aspectOptions.forEach((opt) => {
+    const option = document.createElement("option");
+    option.value = opt.value;
+    option.text = opt.text;
+    option.selected = window.AppState.params.canvasSize.mode === opt.value;
+    aspectSelect.appendChild(option);
+  });
+
+  aspectSelect.onchange = (e) => {
+    window.AppState.setParam("canvasSizeMode", e.target.value);
+    customSizeGroup.style.display =
+      e.target.value === "custom" ? "flex" : "none";
+  };
+
+  col3.appendChild(aspectSelect);
+
+  // Контейнер для кастомных размеров
+  const customSizeGroup = document.createElement("div");
+  customSizeGroup.style.display =
+    window.AppState.params.canvasSize.mode === "custom" ? "flex" : "none";
+  customSizeGroup.style.flexDirection = "column";
+  customSizeGroup.style.gap = "8px";
+
+  // Поле для ширины
+  {
+    const lbl = document.createElement("label");
+    lbl.innerText = "Ширина:";
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = 100;
+    input.max = 5000;
+    input.value = window.AppState.params.canvasSize.width;
+    input.oninput = (e) =>
+      window.AppState.setParam("canvasWidth", +e.target.value);
+    lbl.appendChild(input);
+    customSizeGroup.appendChild(lbl);
+  }
+
+  // Поле для высоты
+  {
+    const lbl = document.createElement("label");
+    lbl.innerText = "Высота:";
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = 100;
+    input.max = 5000;
+    input.value = window.AppState.params.canvasSize.height;
+    input.oninput = (e) =>
+      window.AppState.setParam("canvasHeight", +e.target.value);
+    lbl.appendChild(input);
+    customSizeGroup.appendChild(lbl);
+  }
+
+  col3.appendChild(customSizeGroup);
+
+  // Кнопка применения размеров
+  const applySizeBtn = document.createElement("button");
+  applySizeBtn.textContent = "Применить размер";
+  applySizeBtn.style.marginTop = "10px";
+  applySizeBtn.onclick = () => {
+    localStorage.setItem(
+      "canvasSettings",
+      JSON.stringify(window.AppState.params.canvasSize)
+    );
+    location.reload();
+  };
+  col3.appendChild(applySizeBtn);
+
+  // Разделитель
+  const separator = document.createElement("hr");
+  separator.style.margin = "20px 0";
+  col3.appendChild(separator);
+
+  // Кнопки управления
   [
     { txt: "FPS 20", fn: () => window.setFPS(20) },
     { txt: "FPS 1", fn: () => window.setFPS(1) },

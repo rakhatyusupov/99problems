@@ -1,9 +1,3 @@
-// sketch.js  — упрощённая схема: один «обработчик текста»
-// --------------------------------------------------------
-// --------------------------------------------------------
-//  Main p5 sketch with three optional post-filters:
-//  grain, glitch, noise
-// --------------------------------------------------------
 let glitchShader, grainShader, noiseShader;
 let drawingSurface, img;
 
@@ -16,6 +10,20 @@ let offX = 0,
   offY = 0;
 let droppedImages = [];
 let isLooping = true;
+
+// Восстановление сохраненных размеров холста
+const savedCanvasSettings = localStorage.getItem("canvasSettings");
+if (savedCanvasSettings) {
+  try {
+    const settings = JSON.parse(savedCanvasSettings);
+    if (window.AppState) {
+      window.AppState.params.canvasSize = settings;
+      window.AppState.updateCanvasSize();
+    }
+  } catch (e) {
+    console.error("Error loading canvas settings", e);
+  }
+}
 
 /* ───────── GRID HELPERS ───────── */
 const colSize = () => {
@@ -64,9 +72,16 @@ function preload() {
     () => (img = null)
   );
 }
+
 function setup() {
-  const cnv = createCanvas(800, 800);
+  // Получаем сохраненные размеры холста
+  const canvasWidth = window.AppState?.params?.canvasSize?.width || 800;
+  const canvasHeight = window.AppState?.params?.canvasSize?.height || 800;
+
+  const cnv = createCanvas(canvasWidth, canvasHeight);
   pixelDensity(2);
+
+  // Обработчик загрузки изображений
   cnv.drop(
     (file) =>
       file.type === "image" &&
@@ -79,6 +94,7 @@ function setup() {
         })
       )
   );
+
   drawingSurface = createGraphics(width, height);
   textFont("monospace");
 
@@ -89,14 +105,40 @@ function setup() {
     loop();
     frameRate(f);
   };
+
   window.toggleLoop = () => {
     isLooping ? noLoop() : loop();
     isLooping = !isLooping;
   };
+
   window.resetAnchors = () => {
     imgPos = randGridPos();
     textObjs.forEach((o) => (o.pos = randGridPos()));
   };
+}
+
+/* ───────── WINDOW RESIZE HANDLER ───────── */
+function windowResized() {
+  if (window.AppState?.params?.canvasSize?.mode === "full-width") {
+    // Обновляем размеры для полноэкранного режима
+    window.AppState.params.canvasSize.width = window.innerWidth;
+    window.AppState.params.canvasSize.height = window.innerHeight;
+
+    resizeCanvas(
+      window.AppState.params.canvasSize.width,
+      window.AppState.params.canvasSize.height
+    );
+
+    // Пересоздаем графический буфер
+    drawingSurface = createGraphics(
+      window.AppState.params.canvasSize.width,
+      window.AppState.params.canvasSize.height
+    );
+
+    // Пересчитываем позиции элементов
+    imgPos = randGridPos();
+    textObjs.forEach((o) => (o.pos = randGridPos()));
+  }
 }
 
 /* ───────── DRAW ───────── */
