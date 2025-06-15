@@ -21,6 +21,11 @@ const float Amp    = 20.0;
 const float FreqX  = 30.0;
 const float FreqY  = 30.0;
 
+uniform float uAngel;
+uniform float uRate;
+uniform float uDLTA;
+
+
 /* ---- iq noise helpers (3-D) ---- */
 mat3 m = mat3(  0.00,  0.80,  0.60,
                -0.80,  0.36, -0.48,

@@ -20,7 +20,7 @@ window.AppState = {
     // shader control params:
     angel: 1.0,
     rate: 1.0,
-    dlta: 0.2,
+    dlta: 1.0,
     // canvas size (existing)...
     canvasSize: {
       mode: "1:1",
@@ -136,9 +136,9 @@ document.addEventListener("DOMContentLoaded", () => {
     lbl.appendChild(r);
     col1.appendChild(lbl);
   };
-  addShaderRange("Angel:", "angel", 0.0, 5.0, 0.01);
-  addShaderRange("Rate:", "rate", 0.1, 10.0, 0.01);
-  addShaderRange("DLTA:", "dlta", 0.0, 1.0, 0.01);
+  addShaderRange("Angel:", "angel", 0, 1, 0.01);
+  addShaderRange("Rate:", "rate", 0, 1, 0.01);
+  addShaderRange("DLTA:", "dlta", 0, 1, 0.01);
 
   /* ----- COL1 : existing grain amp ----- */
   {

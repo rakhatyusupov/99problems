@@ -9,6 +9,11 @@ uniform vec2 filter_res;             // разрешение (не исполь�
 uniform float noise;                 // из sketch.js: getNoiseValue()
 uniform float millis;                //  использоваесли нужно, можемть в эффектах
 
+uniform float uAngel;
+uniform float uRate;
+uniform float uDLTA;
+
+
 #define SIN01(a) (sin(a) * 0.5 + 0.5)
 
 vec3 rgb2hsv(vec3 c) {
@@ -30,8 +35,8 @@ void main() {
     vec3 hsv = rgb2hsv(rgb);
 
     // Пример простого глитч-эффекта на основе HSV и малого вращения
-    float angle = hsv.x + atan(uv.y - 0.5, uv.x - 0.5) + millis * 0.0001;
-    mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    float angle = hsv.x + atan(uv.y - 0.5 + uAngel*0.5, uv.x - 0.5 + uAngel*0.5) + millis * 0.0001;
+    mat2 rot = mat2(cos(angle + uAngel*0.5), -sin(angle + uDLTA*0.5), sin(angle+uRate*0.5), cos(angle));
 
     float offsetAmount = log(max(SIN01(millis * 0.0007) - 0.2, 0.0) * 0.20 + 1.0);
     vec2 offset = rot * vec2(offsetAmount, 0.0) * hsv.y;
