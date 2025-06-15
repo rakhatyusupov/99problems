@@ -8,6 +8,11 @@ uniform  vec2  filter_res;
 uniform  float millis;
 uniform  vec2  u_mouse;         // 0-1
 
+uniform float uAngel;
+uniform float uRate;
+uniform float uDLTA;
+
+
 const float ring = 5.0;
 const float div  = 0.5;
 
@@ -20,8 +25,8 @@ void main() {
     float t  = millis * 0.00005;      // ≈ iTime * 0.05
 
     /* кольцевое смещение вокруг курсора */
-    vec2 p = vec2(uv.x * aspect, uv.y);
-    vec2 m = vec2(u_mouse.x * aspect, u_mouse.y);
+    vec2 p = vec2(uv.x * aspect * uRate, uv.y);
+    vec2 m = vec2(u_mouse.x * aspect * uRate, u_mouse.y);
 
     float r = distance(p, m) - t;
           r = fract(r * ring) / div;   // 0‒1 saw
