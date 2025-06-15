@@ -74,7 +74,6 @@ function preload() {
 }
 
 function setup() {
-  // Получаем сохраненные размеры холста
   const canvasWidth = window.AppState?.params?.canvasSize?.width || 800;
   const canvasHeight = window.AppState?.params?.canvasSize?.height || 800;
 
