@@ -158,11 +158,37 @@ document.addEventListener("DOMContentLoaded", () => {
     { txt: "Flowing", key: "useFlowing" },
   ].forEach(({ txt, key }) => {
     const lbl = document.createElement("label");
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.checked = window.AppState.params[key];
-    cb.onchange = (e) => window.AppState.setParam(key, e.target.checked);
-    lbl.append(cb, " ", txt);
+    lbl.className = "toggle-label";
+
+    // Toggle container
+    const toggleContainer = document.createElement("div");
+    toggleContainer.className = "toggle-container";
+
+    // Toggle handle
+    const toggleHandle = document.createElement("div");
+    toggleHandle.className = "toggle-handle";
+    if (window.AppState.params[key]) {
+      toggleHandle.style.left = "auto";
+      toggleHandle.style.right = "2px";
+    }
+
+    toggleContainer.appendChild(toggleHandle);
+
+    // Click handler
+    toggleContainer.onclick = (e) => {
+      const newValue = !window.AppState.params[key];
+      window.AppState.setParam(key, newValue);
+
+      if (newValue) {
+        toggleHandle.style.left = "auto";
+        toggleHandle.style.right = "4px";
+      } else {
+        toggleHandle.style.left = "4px";
+        toggleHandle.style.right = "auto";
+      }
+    };
+
+    lbl.append(toggleContainer, " ", txt);
     shadersContainer.appendChild(lbl);
   });
 
